@@ -1,7 +1,44 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from app.schemas import PostCreate
 
 app = FastAPI()
 
-@app.get("/hello-world")
-def hello_world():
-    return {"message": "Hello, World!"}
+text_posts = {
+    1: {"title": "First Post", "content": "This is the first post."},
+    2: {"title": "Second Post", "content": "This is the second post."},
+    3: {"title": "Third Post", "content": "This is the third post."},
+    4: {"title": "Fourth Post", "content": "This is the fourth post."},
+    5: {"title": "Fifth Post", "content": "This is the fifth post."},
+    6: {"title": "Sixth Post", "content": "This is the sixth post."},
+}
+
+@app.get("/posts")
+def get_all_posts(limit: int = None):
+    
+    if limit:
+        return dict(list(text_posts.items())[:limit])
+    return text_posts
+
+@app.get("/posts/{post_id}")
+def get_post(post_id:int):
+    
+    if post_id not in text_posts:
+        raise HTTPException(status_code=404, detail="Post not found")
+    
+    return text_posts.get(post_id)
+
+
+@app.post("/posts")
+def create_post(post:PostCreate):
+    
+    new_post = {"title": post.title, "content": post.content}
+    
+    text_posts[max(text_posts.keys()) + 1] =  new_post
+    
+    return new_post
+    
+    
+    
+    
+
+
