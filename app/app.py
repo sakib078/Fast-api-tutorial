@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException
-from app.schemas import PostCreate
+from app.schemas import PostCreate, PostResponse
 
 app = FastAPI()
 
@@ -13,6 +13,7 @@ text_posts = {
 }
 
 @app.get("/posts")
+#limit is a query parameter which helps query the number of post we want to get.
 def get_all_posts(limit: int = None):
     
     if limit:
@@ -29,7 +30,8 @@ def get_post(post_id:int):
 
 
 @app.post("/posts")
-def create_post(post:PostCreate):
+# Postresponse type check the data we recive from post endpoint, if we try to return anything else than new_post give use an error.
+def create_post(post:PostCreate) -> PostResponse:
     
     new_post = {"title": post.title, "content": post.content}
     
