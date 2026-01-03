@@ -23,7 +23,6 @@ class User(SQLAlchemyBaseUserTableUUID, Base):
     
     
 
-
 class Post(Base):
     __tablename__ = "posts"
     
@@ -36,6 +35,7 @@ class Post(Base):
     created_at = Column(DateTime, default= datetime.utcnow)
     
     user = relationship("User", back_populates="posts")
+    
     
 engine = create_async_engine(DATABASE_URL, echo=True)
 async_session = async_sessionmaker(engine, expire_on_commit=False)
