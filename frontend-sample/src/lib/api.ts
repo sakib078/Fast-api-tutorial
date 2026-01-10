@@ -1,4 +1,3 @@
-
 /*
 
 Different api endpoints list implemented:
@@ -23,17 +22,64 @@ DELETE http://localhost:8000/users/{id} — Delete user
 
 */
 
+import { Post, Comment } from "@/types/post";
+import { UsertoRegister } from "@/types/user";
+
+
+const API_BASE_URL = 'http://localhost:8000';
+
 
 // Auth (fastapi-users) — common subpaths (under /auth or /auth/jwt)
 
 // POST http://localhost:8000/auth/register — Register a new user ✅
-async function registerUser(email: string, password: string) {
 
+
+async function registerUser(user: UsertoRegister): Promise<Response> {
+
+    try {
+        const response = await fetch(API_BASE_URL + '/auth/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(user)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Blast! Our data was not received favorably: ${response.statusText}`);
+        }
+        
+        console.log('User registered successfully');
+        return await response.json();
+
+    }
+    catch (error) {
+        console.error('Error registering user:', error);
+    }
 
 }
 
 // POST http://localhost:8000/auth/jwt/login — Log in (get JWT) ✅
 async function loginUser(email: string, password: string) {
+    
+    try {
+        const response = await fetch(API_BASE_URL + '/auth/jwt/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email, password })
+        });
+        if (!response.ok) {
+            throw new Error(`Blast! Our data was not received favorably: ${response.statusText}`);
+        }
+        console.log('User logged in successfully');
+        return await response.json();
+    }
+    catch (error) {
+        console.error('Error logging in user:', error);
+    }
+    
 
 }
 
