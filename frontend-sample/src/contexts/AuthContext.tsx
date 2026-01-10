@@ -1,11 +1,12 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { registerUser } from '@/lib/api';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { registerUser, loginUser, getCurrentUser } from '@/lib/api';
 import { UsertoRegister, currentUser } from '@/types/user';
 
 
 interface AuthContextType {
   user: currentUser | null;
   isAuthenticated: boolean;
+  loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string) => Promise<void>;
   logout: () => void;
@@ -15,18 +16,40 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<currentUser | null>();
-  
+  const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+
+    let mounted = true;
+
+    getCurrentUser()
+      .then((me) => { if (mounted) setUser(me); })
+      .catch(() => { /* not logged in */ })
+      .finally(() => { if (mounted) setLoading(false); });
+
+    return () => { mounted = false; };
+  }, []);
+
 
   const login = async (email: string, _password: string) => {
-    
-    const mockUser: currentUser = {
-      id: crypto.randomUUID(),
-      email,
-      is_active: true,
-      is_superuser: false,
-      is_verified: true,
-    };
-    setUser(mockUser);
+
+    const formData = new URLSearchParams();
+    formData.append('username', email);
+    formData.append('password', _password);
+    formData.append('grant_type', 'password');
+
+    setLoading(true);
+    try {
+
+      await loginUser(formData);
+      const me = await getCurrentUser();
+      setUser(me);
+      
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const signup = async (email: string, _password: string) => {
@@ -39,19 +62,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       is_verified: false,
     };
 
-    const registeredUser: currentUser = await registerUser(userToRegister);
+    setLoading(true);
 
-    setUser(registeredUser);
+    try {
+      const registeredUser = await registerUser(userToRegister);
+      setUser(registeredUser);
+
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('momento_user');
-    localStorage.removeItem('momento_token');
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, loading, login, signup, logout }}>
       {children}
     </AuthContext.Provider>
   );

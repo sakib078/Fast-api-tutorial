@@ -23,7 +23,7 @@ DELETE http://localhost:8000/users/{id} — Delete user
 */
 
 import { Post, Comment } from "@/types/post";
-import { UsertoRegister } from "@/types/user";
+import { UsertoRegister, currentUser } from "@/types/user";
 
 
 const API_BASE_URL = 'http://localhost:8000';
@@ -34,7 +34,7 @@ const API_BASE_URL = 'http://localhost:8000';
 // POST http://localhost:8000/auth/register — Register a new user ✅
 
 
-async function registerUser(user: UsertoRegister): Promise<Response> {
+async function registerUser(user: UsertoRegister): Promise<currentUser> {
 
     try {
         const response = await fetch(API_BASE_URL + '/auth/register', {
@@ -48,9 +48,9 @@ async function registerUser(user: UsertoRegister): Promise<Response> {
         if (!response.ok) {
             throw new Error(`Blast! Our data was not received favorably: ${response.statusText}`);
         }
-        
+
         console.log('User registered successfully');
-        return await response.json();
+        return await response.json() as currentUser;
 
     }
     catch (error) {
@@ -60,26 +60,30 @@ async function registerUser(user: UsertoRegister): Promise<Response> {
 }
 
 // POST http://localhost:8000/auth/jwt/login — Log in (get JWT) ✅
-async function loginUser(email: string, password: string) {
-    
+async function loginUser(formData: URLSearchParams): Promise<any> {
+
     try {
-        const response = await fetch(API_BASE_URL + '/auth/jwt/login', {
+        const response = await fetch('http://127.0.0.1:8000/auth/jwt/login', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: JSON.stringify({ email, password })
+            body: formData.toString(),
+            // CRITICAL: Tells the browser to accept and store the cookie [web:69]
+            credentials: 'include',
         });
-        if (!response.ok) {
-            throw new Error(`Blast! Our data was not received favorably: ${response.statusText}`);
+
+        if (response.status === 204) {
+            console.log("Login successful! Cookie stored by browser.");
+            // Redirect to your dashboard [web:72]
+        } else {
+            const errorData = await response.json();
+            alert(errorData.detail); // e.g., "LOGIN_BAD_CREDENTIALS"
         }
-        console.log('User logged in successfully');
-        return await response.json();
+    } catch (err) {
+        console.error("Network error:", err);
     }
-    catch (error) {
-        console.error('Error logging in user:', error);
-    }
-    
+
 
 }
 
@@ -95,9 +99,15 @@ async function verifyEmail(token: string) {
 
 // Users
 
-// GET http://localhost:8000/users — List users
-async function listUsers() {
+// GET http://localhost:8000/users/me — List current user
+async function getCurrentUser():Promise<currentUser> {
+    const resp = await fetch(API_BASE_URL + '/users/me', 
+        { credentials: 'include' }
+    );
 
+    if (!resp.ok) throw new Error(resp.statusText);
+
+    return await resp.json() as currentUser;
 }
 
 // GET http://localhost:8000/users/{id} — Get user by id
@@ -138,7 +148,7 @@ export {
     loginUser,
     resetPassword,
     verifyEmail,
-    listUsers,
+    getCurrentUser,
     getUserById,
     updateUser,
     deleteUser,

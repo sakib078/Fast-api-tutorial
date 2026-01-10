@@ -3,7 +3,8 @@ import uuid
 from fastapi import Depends, Request
 from fastapi_users import BaseUserManager, FastAPIUsers, UUIDIDMixin, models
 from fastapi_users.authentication import (
-    AuthenticationBackend, BearerTransport, JWTStrategy)
+    AuthenticationBackend, CookieTransport, JWTStrategy, BearerTransport
+)
 from fastapi_users.db import SQLAlchemyUserDatabase
 from app.db import User, get_user_db
 
@@ -29,14 +30,20 @@ async def get_user_manager(user_db: SQLAlchemyUserDatabase = Depends(get_user_db
     yield UserManager(user_db)
     
     
-bearer_transport = BearerTransport(tokenUrl="auth/jwt/login")
+cookie_transport = CookieTransport(
+    cookie_max_age=3600, 
+    cookie_name="fastapi_auth", # Name of the cookie in the browser
+    cookie_httponly=True,       # Prevents JS access (XSS Protection) [web:10]
+    cookie_samesite="lax",      # CSRF Protection
+    cookie_secure=False         # Set to True if using HTTPS (Production) [web:13]
+)
 
 def get_jwt_strategy() -> JWTStrategy:
     return JWTStrategy(secret=SECRET, lifetime_seconds=3600)
 
 auth_backend = AuthenticationBackend(
     name="jwt",
-    transport=bearer_transport,
+    transport=cookie_transport,
     get_strategy=get_jwt_strategy,
 )
 
