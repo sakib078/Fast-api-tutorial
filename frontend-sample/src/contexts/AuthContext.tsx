@@ -21,13 +21,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
 
     let mounted = true;
-
+    
     getCurrentUser()
-      .then((me) => { if (mounted) setUser(me); })
-      .catch(() => { /* not logged in */ })
-      .finally(() => { if (mounted) setLoading(false); });
+      .then((me) => {
+        if (mounted) setUser(me);
+      })
+      .catch((err) => {
+        // Silently handle 401: it just means we show the login button
+        if (mounted) setUser(null);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
 
     return () => { mounted = false; };
+
+
   }, []);
 
 
@@ -44,7 +53,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await loginUser(formData);
       const me = await getCurrentUser();
       setUser(me);
-      
+
     } catch (err) {
       console.error(err);
     } finally {
@@ -73,7 +82,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setLoading(false);
     }
-  
+
   };
 
   const logout = () => {

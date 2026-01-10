@@ -37,7 +37,7 @@ const API_BASE_URL = 'http://localhost:8000';
 async function registerUser(user: UsertoRegister): Promise<currentUser> {
 
     try {
-        const response = await fetch(API_BASE_URL + '/auth/register', {
+        const response = await fetch(`${API_BASE_URL}/auth/register`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -63,7 +63,7 @@ async function registerUser(user: UsertoRegister): Promise<currentUser> {
 async function loginUser(formData: URLSearchParams): Promise<any> {
 
     try {
-        const response = await fetch('http://127.0.0.1:8000/auth/jwt/login', {
+        const response = await fetch(`${API_BASE_URL}/auth/jwt/login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -101,9 +101,14 @@ async function verifyEmail(token: string) {
 
 // GET http://localhost:8000/users/me — List current user
 async function getCurrentUser():Promise<currentUser> {
-    const resp = await fetch(API_BASE_URL + '/users/me', 
+    const resp = await fetch(`${API_BASE_URL}/users/me`, 
         { credentials: 'include' }
     );
+
+    if (resp.status === 401) {
+        // This is a known state: the user is a guest.
+        throw new Error("GUEST_USER"); 
+    }
 
     if (!resp.ok) throw new Error(resp.statusText);
 
