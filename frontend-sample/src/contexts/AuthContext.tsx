@@ -1,15 +1,10 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { registerUser } from '@/lib/api';
+import { UsertoRegister, currentUser } from '@/types/user';
 
-interface User {
-  id: string;
-  email: string;
-  is_active: boolean;
-  is_superuser: boolean;
-  is_verified: boolean;
-}
 
 interface AuthContextType {
-  user: User | null;
+  user: currentUser | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string) => Promise<void>;
@@ -19,14 +14,12 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(() => {
-    const stored = localStorage.getItem('momento_user');
-    return stored ? JSON.parse(stored) : null;
-  });
+  const [user, setUser] = useState<currentUser | null>();
+  
 
   const login = async (email: string, _password: string) => {
-    // Simulate login - replace with actual API call
-    const mockUser: User = {
+    
+    const mockUser: currentUser = {
       id: crypto.randomUUID(),
       email,
       is_active: true,
@@ -34,22 +27,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       is_verified: true,
     };
     setUser(mockUser);
-    localStorage.setItem('momento_user', JSON.stringify(mockUser));
-    localStorage.setItem('momento_token', 'mock_token_' + Date.now());
   };
 
   const signup = async (email: string, _password: string) => {
-    // Simulate signup - replace with actual API call
-    const mockUser: User = {
-      id: crypto.randomUUID(),
-      email,
+
+    const userToRegister: UsertoRegister = {
+      email: email,
+      password: _password,
       is_active: true,
       is_superuser: false,
       is_verified: false,
     };
-    setUser(mockUser);
-    localStorage.setItem('momento_user', JSON.stringify(mockUser));
-    localStorage.setItem('momento_token', 'mock_token_' + Date.now());
+
+    const registeredUser: currentUser = await registerUser(userToRegister);
+
+    setUser(registeredUser);
   };
 
   const logout = () => {
@@ -72,3 +64,4 @@ export const useAuth = () => {
   }
   return context;
 };
+
