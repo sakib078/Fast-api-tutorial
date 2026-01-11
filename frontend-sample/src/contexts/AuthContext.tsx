@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { registerUser, loginUser, getCurrentUser } from '@/lib/api';
+import { registerUser, loginUser, getCurrentUser, logoutUser } from '@/lib/api';
 import { UsertoRegister, currentUser } from '@/types/user';
 
 
@@ -82,10 +82,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setLoading(false);
     }
-
   };
 
-  const logout = () => {
+  const logout = async () => {
+
+    await logoutUser();
+    
     setUser(null);
   };
 

@@ -25,12 +25,12 @@ const Index = () => {
     );
   }
 
-  // Phase 2: Not authenticated (the useEffect above will handle redirection)
+  // Phase 2: Not authenticated (the useEffect above will handle redirection).
   if (!isAuthenticated) {
     return null;
   }
 
-  // Phase 3: Authenticated successfully [web:2]
+  // Phase 3: Authenticated successfully.
   return <Feed />;
 };
 

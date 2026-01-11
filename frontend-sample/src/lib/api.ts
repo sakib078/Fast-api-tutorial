@@ -81,10 +81,33 @@ async function loginUser(formData: URLSearchParams): Promise<any> {
             alert(errorData.detail); // e.g., "LOGIN_BAD_CREDENTIALS"
         }
     } catch (err) {
-        console.error("Network error:", err);
+        console.error("Login error:", err);
     }
 
+}
 
+// POST http://localhost:8000/auth/jwt/logout — Log out (delete cookie)
+async function logoutUser() {
+    
+    try {
+        
+        const response = await fetch(`${API_BASE_URL}/auth/jwt/logout`, {
+            method: 'POST',
+            // CRITICAL: Tells the browser to include cookies 
+            credentials: 'include',
+        },);
+
+        if (response.status === 204 || response.status === 200) {
+            console.log("Logged out successfully on backend.");
+            // Redirect to homepage or login page
+        } else {
+            const errorData = await response.json();
+            alert(errorData.detail);
+        }
+
+    } catch (err) {
+        console.error("Logout error:", err);
+    }
 }
 
 // POST http://localhost:8000/auth/reset-password — Start/reset password flow ✅
@@ -151,6 +174,7 @@ async function deletePost(postId: string) {
 export {
     registerUser,
     loginUser,
+    logoutUser,
     resetPassword,
     verifyEmail,
     getCurrentUser,
