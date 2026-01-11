@@ -140,7 +140,7 @@ async function getCurrentUser():Promise<currentUser> {
 
 // GET http://localhost:8000/users/{id} — Get user by id
 async function getUserById(id: string) {
-
+    
 }
 
 // PATCH/PUT http://localhost:8000/users/{id} — Update user
@@ -158,12 +158,58 @@ async function deleteUser(id: string) {
 // POST http://localhost:8000/upload — Upload a file (multipart file, optional caption) — auth required 🔒
 async function uploadFile(file: File, caption?: string) {
 
+    const formdata = new FormData();
+
+    formdata.append('file', file);
+    if (caption) formdata.append('caption', caption); 
+
+    try {
+
+        const resp = await fetch(`${API_BASE_URL}/upload`, {
+            method: "POST",
+            headers: {},
+            credentials: 'include',
+            body: formdata,
+        });
+
+        if(resp.ok){
+            
+            const result = await resp.json();
+
+            console.log('Success:', result);
+        }
+        else {
+            throw new Error(`Failed to uplaod feed: ${resp.statusText}`)
+        }
+
+    } catch(err) {
+        console.log("Error", err);
+    }
+
 }
 
 // GET http://localhost:8000/feed — Return posts feed (latest first) — auth required 🔒
 async function getFeed() {
 
+    try {
+        const resp = await fetch(`${API_BASE_URL}/feed`, {
+        method: 'GET',
+        credentials: 'include'
+    });
+     
+    if (!resp.ok) {
+        throw new Error(`Failed to fetch feed: ${resp.statusText}`);
+    }
+
+    const posts: Post[] = await resp.json();
+    return posts;
+    
+    } catch (error) {
+        console.error('Error fetching feed:', error);
+    }
+
 }
+
 
 // DELETE http://localhost:8000/posts/{post_id} — Delete a post by UUID (owner only) — auth + ownership 🔒
 async function deletePost(postId: string) {
