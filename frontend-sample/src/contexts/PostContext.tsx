@@ -50,10 +50,7 @@ const samplePosts: Post[] = [
 ];
 
 export const PostProvider = ({ children }: { children: ReactNode }) => {
-  const [posts, setPosts] = useState<Post[]>(() => {
-    const stored = localStorage.getItem('momento_posts');
-    return stored ? JSON.parse(stored) : samplePosts;
-  });
+  const [posts, setPosts] = useState<Post[]>(samplePosts);
 
   const savePosts = (newPosts: Post[]) => {
     setPosts(newPosts);

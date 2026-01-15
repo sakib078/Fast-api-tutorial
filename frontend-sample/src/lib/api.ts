@@ -214,6 +214,28 @@ async function getFeed() {
 // DELETE http://localhost:8000/posts/{post_id} — Delete a post by UUID (owner only) — auth + ownership 🔒
 async function deletePost(postId: string) {
 
+    try {
+
+        const resp = await fetch(`${API_BASE_URL}/posts/${postId}`,{
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+
+        })
+
+        if (!resp.ok) {
+            throw new Error(`Server responded with status ${resp.statusText}`);
+        }
+
+        let result = await resp.json();
+        return result;
+
+    } catch(err) {
+         console.error("Error deleting resource:", err);
+         return null;
+    }
+
 }
 
 

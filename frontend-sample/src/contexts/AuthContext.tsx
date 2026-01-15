@@ -2,7 +2,6 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 import { registerUser, loginUser, getCurrentUser, logoutUser } from '@/lib/api';
 import { UsertoRegister, currentUser } from '@/types/user';
 
-
 interface AuthContextType {
   user: currentUser | null;
   isAuthenticated: boolean;
