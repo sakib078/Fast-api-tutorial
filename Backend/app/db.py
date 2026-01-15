@@ -21,6 +21,16 @@ class Base(DeclarativeBase):
 class User(SQLAlchemyBaseUserTableUUID, Base):
     posts = relationship("Post", back_populates="user")
     
+class Comment(Base):
+    __tablename__ = "comments"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("user.id"), nullable=False)
+    text = Column(String, nullable=False)
+    created_at = Column(DateTime, default= datetime.utcnow)
+    
+    post = relationship("Post", back_populates="posts")
+    
     
 
 class Post(Base):
@@ -35,6 +45,7 @@ class Post(Base):
     created_at = Column(DateTime, default= datetime.utcnow)
     
     user = relationship("User", back_populates="posts")
+    comments = relationship("Comment", back_populates="posts", cascade="all, delete-orphan")
     
     
 engine = create_async_engine(DATABASE_URL, echo=True)
