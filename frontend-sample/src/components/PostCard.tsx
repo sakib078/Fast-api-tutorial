@@ -42,9 +42,9 @@ const PostCard = ({ post }: PostCardProps) => {
     }
   };
 
-  const getInitials = (email: string) => {
-    return email.split('@')[0].slice(0, 2).toUpperCase();
-  };
+  // const getInitials = (email: string) => {
+  //   return email.split('@')[0].slice(0, 2).toUpperCase();
+  // };
 
   return (
     <Card className="overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
@@ -53,11 +53,11 @@ const PostCard = ({ post }: PostCardProps) => {
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10 bg-primary">
             <AvatarFallback className="bg-primary text-primary-foreground font-medium">
-              {getInitials(post.userEmail)}
+              {/* {getInitials(post.userEmail)} */}
             </AvatarFallback>
           </Avatar>
           <div>
-            <p className="font-medium text-foreground">{post.userEmail.split('@')[0]}</p>
+            {/* <p className="font-medium text-foreground">{post.userEmail.split('@')[0]}</p> */}
             <p className="text-xs text-muted-foreground">
               {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
             </p>
@@ -105,7 +105,7 @@ const PostCard = ({ post }: PostCardProps) => {
 
         {/* Caption */}
         <p className="text-foreground">
-          <span className="font-medium">{post.userEmail.split('@')[0]}</span>{' '}
+          {/* <span className="font-medium">{post.userEmail.split('@')[0]}</span>{' '} */}
           {post.caption}
         </p>
 
@@ -118,7 +118,7 @@ const PostCard = ({ post }: PostCardProps) => {
               <div className="space-y-2 max-h-40 overflow-y-auto">
                 {post.comments.map((comment) => (
                   <div key={comment.id} className="flex gap-2 text-sm">
-                    <span className="font-medium text-foreground">{comment.userEmail.split('@')[0]}</span>
+                    {/* <span className="font-medium text-foreground">{comment.userEmail.split('@')[0]}</span> */}
                     <span className="text-foreground">{comment.text}</span>
                   </div>
                 ))}

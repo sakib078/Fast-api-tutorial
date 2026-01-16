@@ -55,6 +55,7 @@ export const PostProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addPost = (imageUrl: string, caption: string, userId: string, userEmail: string) => {
+    // call POST method at http://localhost:8000/upload
     const newPost: Post = {
       id: crypto.randomUUID(),
       userId,
@@ -72,6 +73,7 @@ export const PostProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const likePost = (postId: string, userId: string) => {
+    // Call PATCH method at 
     savePosts(posts.map(post => {
       if (post.id === postId) {
         const hasLiked = post.likes.includes(userId);

@@ -83,7 +83,9 @@ async def upload_file(
                 url= upload_result.url,
                 file_type= "video" if file.content_type.startswith("video/") else "image",
                 file_name=upload_result.name
+                
             )
+            
             session.add(post)
             await session.commit()
             await session.refresh(post)
@@ -153,3 +155,10 @@ async def delete_post(post_id: str, user: User = Depends(current_active_user), s
         return {"success": True, "message": "Post deleted successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.patch("/post/{post_id}")
+async def update_post(post_id:str, user: User = Depends(current_active_user), session: AsyncSession = Depends(get_async_session)):
+      # function for updating the post with comment and likes. 
+      pass
+  

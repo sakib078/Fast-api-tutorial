@@ -238,6 +238,14 @@ async function deletePost(postId: string) {
 
 }
 
+// PATCH  http://localhost:8000/post/{post_id} Update Post
+async function updatePost(postId: string, comment?:[], likes?:[]) {
+       
+    // based on request might be sending changes into post.
+    // send payload for comment, or likes it receives.
+
+}
+
 
 export {
     registerUser,
