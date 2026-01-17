@@ -159,6 +159,21 @@ async def delete_post(post_id: str, user: User = Depends(current_active_user), s
 
 @app.patch("/post/{post_id}")
 async def update_post(post_id:str, user: User = Depends(current_active_user), session: AsyncSession = Depends(get_async_session)):
-      # function for updating the post with comment and likes. 
-      pass
+      # function for updating the post with comment and likes.
+      
+      try:
+          post_uuid = uuid.UUID(post_id)
+
+          result = await session.execute(select(Post).where(Post.id == post_uuid))
+          post = result.scalars().first()
+  
+          if not post:
+              raise HTTPException(status_code=404, detail="Post not found")
+          
+          if post.user_id != user.id:
+              raise HTTPException(status_code=403, detail="Not authorized to delete this post")
+          
+      except Exception as e:
+          raise HTTPException(status_code=500, detail=str(e))
+     
   
