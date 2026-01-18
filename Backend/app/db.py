@@ -24,7 +24,9 @@ post_likes = Table(
     Column("post_id", UUID(as_uuid=True), ForeignKey("posts.id"), primary_key=True),
 )
 
+
 class User(SQLAlchemyBaseUserTableUUID, Base):
+    
     posts = relationship("Post", back_populates="user", cascade="all, delete-orphan")
     comments = relationship("Comment", back_populates="user")
     liked_posts = relationship("Post", secondary=post_likes, back_populates="likers")
@@ -34,6 +36,8 @@ class Post(Base):
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("user.id"), nullable=False)
+    file_type = Column(String, nullable=False) 
+    file_name = Column(String, nullable=False)
     caption = Column(Text)
     url = Column(String, nullable=False) # Maps to imageUrl in frontend
     created_at = Column(DateTime, default=datetime.utcnow)

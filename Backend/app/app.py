@@ -4,11 +4,12 @@ import uuid
 import tempfile
 from fastapi import FastAPI, HTTPException, File, UploadFile, Depends, Form
 from fastapi.middleware.cors import CORSMiddleware
-from app.schemas import PostCreate, PostResponse , UserRead, UserCreate, UserUpdate
+from app.schemas import PostCreate, PostResponse , UserRead, UserCreate, UserUpdate, PostUpdate
 from app.db import Post, create_db_and_tables, get_async_session, User
 from sqlalchemy.ext.asyncio import AsyncSession
 from contextlib import asynccontextmanager
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload, joinedload
 from app.images import imagekit
 # from imagekitio.models.UploadFileRequestOptions import UploadFileRequestOptions
 from pathlib import Path
@@ -37,6 +38,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 app.include_router( fastapi_users.get_auth_router(auth_backend), prefix="/auth/jwt", tags=["auth"])
 app.include_router( fastapi_users.get_register_router(UserRead, UserCreate ), prefix="/auth", tags=["auth"])
@@ -106,33 +108,48 @@ async def get_feed(
     user: User = Depends(current_active_user),
     session: AsyncSession = Depends(get_async_session)
 ):
-    result = await session.execute(select(Post).order_by(Post.created_at.desc()))
-    posts = [row[0] for row in result.all()]
+    # 1. Fetch Posts with Likes and Comments pre-loaded (Required for Async)
+    # selectinload is the best way to load collections like likes and comments
+    post_query = select(Post).options(
+        selectinload(Post.likers),
+        selectinload(Post.comments)
+    ).order_by(Post.created_at.desc())
     
-    user_all = await session.execute(select(User))
-    users = [row[0] for row in user_all.all()]
+    post_result = await session.execute(post_query)
+    posts = post_result.scalars().all() # .scalars().all() is cleaner than [row[0] for row in result.all()]
+
+    # 2. Fetch all Users to create your email mapping dictionary
+    user_query = select(User)
+    user_result = await session.execute(user_query)
+    users = user_result.scalars().all()
     user_dict = {u.id: u.email for u in users}
 
     posts_data = []
 
+    # 3. Build the response matching your frontend Post interface
     for post in posts:
-        posts_data.append(
-            {
-                "id": str(post.id),
-                "user_id": str(post.user_id),
-                "caption": post.caption,
-                "url": post.url,
-                "file_type": post.file_type,
-                "file_name": post.file_name,
-                "created_at": post.created_at.isoformat(),
-                "is_owner": post.user_id == user.id,
-                "email": user_dict.get(post.user_id, "Unknown")
-            }
-        )
+        posts_data.append({
+            "id": str(post.id),
+            "userId": str(post.user_id),
+            "email": user_dict.get(post.user_id, "Unknown"), # Mapping email from dict
+            "caption": post.caption,
+            "url": post.url,
+            "file_type": post.file_type,
+            "file_name": post.file_name,
+            "created_at": post.created_at.isoformat(),
+            "likes": [str(u.id) for u in post.likers], # This works because of selectinload
+            "comments": [
+                {
+                    "id": str(c.id), 
+                    "userId": str(c.user_id), 
+                    "text": c.text,
+                    "createdAt": c.created_at.isoformat()
+                } for c in post.comments
+            ],
+            "is_owner": post.user_id == user.id,
+        })
 
     return {"posts": posts_data}
-
-
 
 @app.delete("/posts/{post_id}")
 async def delete_post(post_id: str, user: User = Depends(current_active_user), session: AsyncSession = Depends(get_async_session)):
@@ -158,22 +175,54 @@ async def delete_post(post_id: str, user: User = Depends(current_active_user), s
 
 
 @app.patch("/post/{post_id}")
-async def update_post(post_id:str, user: User = Depends(current_active_user), session: AsyncSession = Depends(get_async_session)):
-      # function for updating the post with comment and likes.
-      
-      try:
-          post_uuid = uuid.UUID(post_id)
+async def update_post(
+    post_id: str, 
+    update_data: PostUpdate,
+    user: User = Depends(current_active_user), 
+    session: AsyncSession = Depends(get_async_session)
+):
+    try:
+        post_uuid = uuid.UUID(post_id)
+        # Eager load relationships to avoid async errors
+        query = select(Post).where(Post.id == post_uuid).options(
+            selectinload(Post.likers),
+            selectinload(Post.comments)
+        )
+        
+        result = await session.execute(query)
+        post = result.scalar_one_or_none()
 
-          result = await session.execute(select(Post).where(Post.id == post_uuid))
-          post = result.scalars().first()
-  
-          if not post:
-              raise HTTPException(status_code=404, detail="Post not found")
-          
-          if post.user_id != user.id:
-              raise HTTPException(status_code=403, detail="Not authorized to delete this post")
-          
-      except Exception as e:
-          raise HTTPException(status_code=500, detail=str(e))
+        if not post:
+            raise HTTPException(status_code=404, detail="Post not found")
+
+        # 1. Handle Likes
+        if update_data.like_action == "like":
+            if user not in post.likers:
+                post.likers.append(user)
+        elif update_data.like_action == "unlike":
+            if user in post.likers:
+                post.likers.remove(user)
+
+        # 2. Handle Comments
+        if update_data.new_comment:
+            from app.db import Comment
+            new_comment = Comment(
+                text=update_data.new_comment,
+                user_id=user.id,
+                post_id=post.id
+            )
+            session.add(new_comment)
+
+        # 3. Handle Caption Update (Optional)
+        if update_data.caption:
+            post.caption = update_data.caption
+
+        await session.commit()
+        await session.refresh(post)
+        return {"success": True, "likes_count": len(post.likers)}
+
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
      
   
